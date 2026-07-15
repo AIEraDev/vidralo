@@ -28,7 +28,7 @@ jobs:
             bgutil_asset: bgutil-pot-macos-aarch64
 
           - name: macOS x86_64
-            os: macos-13 # last Intel runner
+            os: macos-latest
             target: x86_64-apple-darwin
             ytdlp_asset: yt-dlp_macos
             bgutil_asset: bgutil-pot-macos-x86_64
