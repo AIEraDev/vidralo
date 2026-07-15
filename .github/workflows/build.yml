@@ -1,0 +1,159 @@
+name: Vidralo — Production Build
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.0.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write  # Needed to create GitHub Releases
+
+jobs:
+  build-and-release:
+    name: Build (${{ matrix.platform.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: macOS ARM64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            ytdlp_asset: yt-dlp_macos
+            bgutil_asset: bgutil-pot-macos-aarch64
+
+          - name: macOS x86_64
+            os: macos-13   # last Intel runner
+            target: x86_64-apple-darwin
+            ytdlp_asset: yt-dlp_macos
+            bgutil_asset: bgutil-pot-macos-x86_64
+
+          - name: Windows x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            ytdlp_asset: yt-dlp.exe
+            bgutil_asset: bgutil-pot-windows-x86_64.exe
+
+          - name: Linux x64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            ytdlp_asset: yt-dlp_linux
+            bgutil_asset: bgutil-pot-linux-x86_64
+
+    runs-on: ${{ matrix.platform.os }}
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Install system deps (Linux only) ────────────────────────────────
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libdbus-1-dev \
+            pkg-config
+
+      # ── 3. Node.js ─────────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      # ── 4. Rust ────────────────────────────────────────────────────────────
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      # ── 5. Install NPM dependencies ─────────────────────────────────────────
+      - name: Install npm dependencies
+        run: npm ci
+
+      # ── 6. Download platform sidecars ──────────────────────────────────────
+      #   We fetch the latest release of yt-dlp and bgutil-pot and place them
+      #   with the correct target-triple suffix Tauri expects.
+
+      - name: Download yt-dlp sidecar (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p src-tauri/binaries
+          curl -L -o "src-tauri/binaries/yt-dlp-${{ matrix.platform.target }}" \
+            "https://github.com/yt-dlp/yt-dlp/releases/latest/download/${{ matrix.platform.ytdlp_asset }}"
+          chmod +x "src-tauri/binaries/yt-dlp-${{ matrix.platform.target }}"
+
+      - name: Download yt-dlp sidecar (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "src-tauri\binaries"
+          Invoke-WebRequest -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/${{ matrix.platform.ytdlp_asset }}" `
+            -OutFile "src-tauri\binaries\yt-dlp-${{ matrix.platform.target }}.exe"
+
+      - name: Download bgutil-pot sidecar (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p src-tauri/binaries
+          curl -L -o "src-tauri/binaries/bgutil-pot-${{ matrix.platform.target }}" \
+            "https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/${{ matrix.platform.bgutil_asset }}"
+          chmod +x "src-tauri/binaries/bgutil-pot-${{ matrix.platform.target }}"
+
+      - name: Download bgutil-pot sidecar (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/${{ matrix.platform.bgutil_asset }}" `
+            -OutFile "src-tauri\binaries\bgutil-pot-${{ matrix.platform.target }}.exe"
+
+      # ── 7. Tauri production build ──────────────────────────────────────────
+      #   Uses the official tauri-action which handles codesigning env vars
+      #   automatically when secrets are set (see README for optional signing).
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # ── macOS codesigning (optional, only activates when secrets exist) ──
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # ── Windows codesigning (optional, only activates when secrets exist) ─
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Vidralo ${{ github.ref_name }}'
+          releaseBody: |
+            ## What's Changed
+            See the full changelog at https://github.com/${{ github.repository }}/compare/${{ github.ref_name }}
+
+            ---
+            ### Installation
+            - **macOS**: Download the `.dmg` file for your chip (Apple Silicon → `aarch64`, Intel → `x86_64`)
+            - **Windows**: Download the `.msi` or `.exe` installer
+            - **Linux**: Download the `.AppImage` or `.deb` package
+
+            > **Note**: No Python or external dependencies required. All download tools are self-contained.
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.platform.target }}

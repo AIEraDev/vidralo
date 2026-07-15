@@ -1,0 +1,36 @@
+# Node
+node_modules/
+dist/
+
+# Rust / Cargo
+src-tauri/target/
+
+# Tauri generated
+src-tauri/gen/
+
+# Sidecar binaries (downloaded at build time by CI or setup script)
+src-tauri/binaries/
+
+# macOS
+.DS_Store
+*.dmg
+
+# Windows
+*.msi
+*.exe
+
+# Linux
+*.AppImage
+*.deb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Env files
+.env
+.env.local
+
+# Logs
+*.log

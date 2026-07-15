@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-500: #e11d48; /* Premium Rose/Crimson */
+  --color-brand-600: #be123c;
+  --color-brand-700: #9f1239;
+  
+  --color-bg-dark: #0a0a0c;
+  --color-panel-dark: #121216;
+  --color-panel-border: rgba(255, 255, 255, 0.08);
+}
+
+/* Glassmorphism custom classes */
+.glass {
+  background: rgba(18, 18, 22, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-input {
+  background: rgba(10, 10, 12, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-input:focus {
+  background: rgba(10, 10, 12, 0.8);
+  border-color: #e11d48;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.2);
+  outline: none;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Premium gradient animation */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 6s ease infinite;
+}
+
+/* Layout overrides */
+body {
+  background-color: #0a0a0c;
+  color: #f3f4f6;
+  font-family: 'Outfit', sans-serif;
+  margin: 0;
+  overflow: hidden;
+  user-select: none;
+}
+
+.no-select {
+  user-select: none;
+}
