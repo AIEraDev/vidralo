@@ -156,5 +156,4 @@ jobs:
             > **Note**: No Python or external dependencies required. All download tools are self-contained.
           releaseDraft: true
           prerelease: false
-          tauriScript: npm run tauri
-          args: -- --target ${{ matrix.platform.target }}
+          args: --target ${{ matrix.platform.target }}
