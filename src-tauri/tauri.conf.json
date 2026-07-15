@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Vidralo — Local-First YouTube Downloader",
+        "title": "Vidralo — Local-First Video Downloader",
         "width": 1000,
         "height": 700
       }

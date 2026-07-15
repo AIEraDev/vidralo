@@ -131,7 +131,7 @@ export default function App() {
               <div className="relative flex-1">
                 <input
                   type="text"
-                  placeholder="Paste YouTube video or playlist URL..."
+                  placeholder="Paste video link (YouTube, TikTok, Facebook, Instagram, Twitter...)"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   className="w-full h-11 px-4 pr-10 rounded-xl glass-input text-sm text-gray-200"
@@ -271,13 +271,13 @@ export default function App() {
                 <li className="flex gap-3">
                   <Shield className="w-4 h-4 text-emerald-500 shrink-0" />
                   <p className="leading-relaxed">
-                    Downloads stream directly from your own IP address, completely evading YouTube bot blocks targeted at cloud hosting servers.
+                    Downloads stream directly from your own IP address, completely evading datacenter blocklists targeted at cloud hosting servers.
                   </p>
                 </li>
                 <li className="flex gap-3">
                   <Globe className="w-4 h-4 text-brand-500 shrink-0" />
                   <p className="leading-relaxed">
-                    Proof-of-Origin (PO) tokens are computed locally via bundled attestation helpers on your desktop to sign requests on-demand.
+                    Supports YouTube, Facebook, TikTok, Instagram, Twitter/X, and more. Use browser cookies in Settings for restriction-free downloads.
                   </p>
                 </li>
               </ul>
