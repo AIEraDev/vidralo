@@ -15,10 +15,16 @@ cask "vidralo" do
   desc "Local-first YouTube downloader — downloads stream directly from your own IP"
   homepage "https://github.com/AIEraDev/vidralo"
 
-  auto_updates false
-  depends_on macos: ">= :ventura"
+  auto_updates true
+  depends_on macos: :ventura
 
   app "Vidralo.app"
+
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-r", "-d", "com.apple.quarantine", "#{staged_path}/Vidralo.app"],
+                   sudo: false
+  end
 
   zap trash: [
     "~/Library/Application Support/com.vidralo.app",

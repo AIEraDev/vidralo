@@ -15,8 +15,63 @@ permissions:
   contents: write # Needed to create GitHub Releases
 
 jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create-release.outputs.id }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Get version
+        id: get_version
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.version }}" != "" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ $GITHUB_REF == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION="v$(node -p "require('./package.json').version")"
+          fi
+          if [[ ! $VERSION =~ ^v ]]; then
+            VERSION="v$VERSION"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          release_name: "Vidralo ${{ steps.get_version.outputs.VERSION }}"
+          body: |
+            ## What's Changed
+            See the full changelog at https://github.com/${{ github.repository }}/compare/${{ steps.get_version.outputs.VERSION }}
+
+            ---
+            ### Installation
+            - **macOS**: Download the `.dmg` file for your chip (Apple Silicon → `aarch64`, Intel → `x86_64`)
+            - **Windows**: Download the `.msi` or `.exe` installer
+            - **Linux**: Download the `.AppImage` or `.deb` package
+
+            > **Note**: No Python or external dependencies required. All download tools are self-contained.
+          draft: true
+          prerelease: false
+
   build-and-release:
     name: Build (${{ matrix.platform.name }})
+    needs: create-release
+    runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -45,8 +100,6 @@ jobs:
             ytdlp_asset: yt-dlp_linux
             bgutil_asset: bgutil-pot-linux-x86_64
 
-    runs-on: ${{ matrix.platform.os }}
-
     steps:
       # ── 1. Checkout ────────────────────────────────────────────────────────
       - name: Checkout repository
@@ -72,7 +125,7 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      # ── 4. Rust ────────────────────────────────────────────────────────────
+      # ── 4. Setup Rust ──────────────────────────────────────────────────────
       - name: Setup Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -88,9 +141,6 @@ jobs:
         run: npm ci
 
       # ── 6. Download platform sidecars ──────────────────────────────────────
-      #   We fetch the latest release of yt-dlp and bgutil-pot and place them
-      #   with the correct target-triple suffix Tauri expects.
-
       - name: Download yt-dlp sidecar (Unix)
         if: runner.os != 'Windows'
         run: |
@@ -123,30 +173,12 @@ jobs:
             -OutFile "src-tauri\binaries\bgutil-pot-${{ matrix.platform.target }}.exe"
 
       # ── 7. Tauri production build ──────────────────────────────────────────
-      #   Uses the official tauri-action which handles codesigning env vars
-      #   automatically when secrets are set (see README for optional signing).
-
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # ── Windows codesigning (optional, only activates when secrets exist) ─
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Vidralo ${{ github.ref_name }}"
-          releaseBody: |
-            ## What's Changed
-            See the full changelog at https://github.com/${{ github.repository }}/compare/${{ github.ref_name }}
-
-            ---
-            ### Installation
-            - **macOS**: Download the `.dmg` file for your chip (Apple Silicon → `aarch64`, Intel → `x86_64`)
-            - **Windows**: Download the `.msi` or `.exe` installer
-            - **Linux**: Download the `.AppImage` or `.deb` package
-
-            > **Note**: No Python or external dependencies required. All download tools are self-contained.
-          releaseDraft: true
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --target ${{ matrix.platform.target }}
