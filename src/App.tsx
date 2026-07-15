@@ -15,8 +15,10 @@ import {
   Clock,
   Video,
   AlertOctagon,
-  ArrowRight
+  ArrowRight,
+  FolderOpen
 } from "lucide-react";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
 
 // Helper to format duration (seconds to hh:mm:ss)
 function formatDuration(sec: number): string {
@@ -378,8 +380,25 @@ export default function App() {
                           )}
 
                           {isCompleted && (
-                            <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                              <CheckCircle className="w-4 h-4 text-emerald-500" />
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {item.filePath && (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await revealItemInDir(item.filePath!);
+                                    } catch (e) {
+                                      console.error("Failed to open file in Finder", e);
+                                    }
+                                  }}
+                                  className="w-6 h-6 rounded bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 flex items-center justify-center cursor-pointer transition-all"
+                                  title="Show in Finder / File Manager"
+                                >
+                                  <FolderOpen className="w-3.5 h-3.5 text-gray-400 hover:text-white" />
+                                </button>
+                              )}
+                              <div className="w-6 h-6 flex items-center justify-center">
+                                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                              </div>
                             </div>
                           )}
                         </div>

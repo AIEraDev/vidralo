@@ -38,6 +38,7 @@ pub struct DownloadProgress {
     pub speed: String,
     pub eta: String,
     pub status: String,
+    pub file_path: Option<String>,
 }
 
 pub enum ActiveProcess {
@@ -369,8 +370,29 @@ pub async fn start_video_download(
             let reader = BufReader::new(stdout);
             let mut lines = reader.lines();
             let progress_regex = Regex::new(r"\[download\]\s+([\d.]+)\%\s+\|\s+(\S+)\s+\|\s+(\S+)").unwrap();
+            let mut file_path = None;
             
             while let Ok(Some(line)) = lines.next_line().await {
+                // Parse destination file paths
+                if line.contains("Destination: ") {
+                    if let Some(pos) = line.find("Destination: ") {
+                        let path = line[pos + 13..].trim().to_string();
+                        file_path = Some(path);
+                    }
+                } else if line.contains("has already been downloaded") {
+                    if let Some(pos) = line.find("[download] ") {
+                        if let Some(end) = line.find(" has already been downloaded") {
+                            let path = line[pos + 11..end].trim().to_string();
+                            file_path = Some(path);
+                        }
+                    }
+                } else if line.contains("Merging formats into ") {
+                    if let Some(pos) = line.find("Merging formats into ") {
+                        let path = line[pos + 21..].trim().trim_matches('"').to_string();
+                        file_path = Some(path);
+                    }
+                }
+                
                 if let Some(caps) = progress_regex.captures(&line) {
                     let percentage = caps.get(1).map(|m| m.as_str().parse::<f64>().unwrap_or(0.0)).unwrap_or(0.0);
                     let speed = caps.get(2).map(|m| m.as_str().to_string()).unwrap_or_else(|| "0B/s".to_string());
@@ -382,6 +404,7 @@ pub async fn start_video_download(
                         speed,
                         eta,
                         status: "Downloading".to_string(),
+                        file_path: None,
                     });
                 } else if line.contains("[Merger]") {
                     let _ = app_clone.emit("download://progress", DownloadProgress {
@@ -390,6 +413,7 @@ pub async fn start_video_download(
                         speed: "0B/s".to_string(),
                         eta: "00:00".to_string(),
                         status: "Merging audio/video...".to_string(),
+                        file_path: None,
                     });
                 } else if line.contains("[ExtractAudio]") {
                     let _ = app_clone.emit("download://progress", DownloadProgress {
@@ -398,9 +422,11 @@ pub async fn start_video_download(
                         speed: "0B/s".to_string(),
                         eta: "00:00".to_string(),
                         status: "Extracting audio...".to_string(),
+                        file_path: None,
                     });
                 }
             }
+            file_path
         });
         
         let stderr_lines = Arc::new(Mutex::new(Vec::new()));
@@ -425,7 +451,7 @@ pub async fn start_video_download(
             
             if let Some(ActiveProcess::Custom(ref mut p)) = process {
                 let status = p.wait().await;
-                let _ = stdout_handler.await;
+                let file_path = stdout_handler.await.ok().flatten();
                 let _ = stderr_handler.await;
                 
                 match status {
@@ -436,6 +462,7 @@ pub async fn start_video_download(
                             speed: "0B/s".to_string(),
                             eta: "00:00".to_string(),
                             status: "Completed".to_string(),
+                            file_path,
                         });
                     }
                     Ok(exit_status) => {
@@ -453,6 +480,7 @@ pub async fn start_video_download(
                             speed: "0B/s".to_string(),
                             eta: "00:00".to_string(),
                             status: format!("Error: {}", err_msg),
+                            file_path: None,
                         });
                     }
                     Err(e) => {
@@ -463,6 +491,7 @@ pub async fn start_video_download(
                             speed: "0B/s".to_string(),
                             eta: "00:00".to_string(),
                             status: format!("Error: {}", err_msg),
+                            file_path: None,
                         });
                     }
                 }
@@ -494,11 +523,33 @@ pub async fn start_video_download(
         tokio::spawn(async move {
             let progress_regex = Regex::new(r"\[download\]\s+([\d.]+)\%\s+\|\s+(\S+)\s+\|\s+(\S+)").unwrap();
             let mut exit_code = None;
+            let mut file_path = None;
             
             while let Some(event) = rx.recv().await {
                 match event {
                     tauri_plugin_shell::process::CommandEvent::Stdout(line_bytes) => {
                         let line = String::from_utf8_lossy(&line_bytes);
+                        
+                        // Parse destination file paths
+                        if line.contains("Destination: ") {
+                            if let Some(pos) = line.find("Destination: ") {
+                                let path = line[pos + 13..].trim().to_string();
+                                file_path = Some(path);
+                            }
+                        } else if line.contains("has already been downloaded") {
+                            if let Some(pos) = line.find("[download] ") {
+                                if let Some(end) = line.find(" has already been downloaded") {
+                                    let path = line[pos + 11..end].trim().to_string();
+                                    file_path = Some(path);
+                                }
+                            }
+                        } else if line.contains("Merging formats into ") {
+                            if let Some(pos) = line.find("Merging formats into ") {
+                                let path = line[pos + 21..].trim().trim_matches('"').to_string();
+                                file_path = Some(path);
+                            }
+                        }
+                        
                         if let Some(caps) = progress_regex.captures(&line) {
                             let percentage = caps.get(1).map(|m| m.as_str().parse::<f64>().unwrap_or(0.0)).unwrap_or(0.0);
                             let speed = caps.get(2).map(|m| m.as_str().to_string()).unwrap_or_else(|| "0B/s".to_string());
@@ -510,6 +561,7 @@ pub async fn start_video_download(
                                 speed,
                                 eta,
                                 status: "Downloading".to_string(),
+                                file_path: None,
                             });
                         } else if line.contains("[Merger]") {
                             let _ = app_clone.emit("download://progress", DownloadProgress {
@@ -518,6 +570,7 @@ pub async fn start_video_download(
                                 speed: "0B/s".to_string(),
                                 eta: "00:00".to_string(),
                                 status: "Merging audio/video...".to_string(),
+                                file_path: None,
                             });
                         } else if line.contains("[ExtractAudio]") {
                             let _ = app_clone.emit("download://progress", DownloadProgress {
@@ -526,6 +579,7 @@ pub async fn start_video_download(
                                 speed: "0B/s".to_string(),
                                 eta: "00:00".to_string(),
                                 status: "Extracting audio...".to_string(),
+                                file_path: None,
                             });
                         }
                     }
@@ -557,6 +611,7 @@ pub async fn start_video_download(
                         speed: "0B/s".to_string(),
                         eta: "00:00".to_string(),
                         status: "Completed".to_string(),
+                        file_path,
                     });
                 }
                 Some(code) => {
@@ -574,6 +629,7 @@ pub async fn start_video_download(
                         speed: "0B/s".to_string(),
                         eta: "00:00".to_string(),
                         status: format!("Error: {}", err_msg),
+                        file_path: None,
                     });
                 }
                 None => {
@@ -583,6 +639,7 @@ pub async fn start_video_download(
                         speed: "0B/s".to_string(),
                         eta: "00:00".to_string(),
                         status: "Error: Process terminated abnormally".to_string(),
+                        file_path: None,
                     });
                 }
             }
@@ -615,6 +672,7 @@ pub async fn cancel_video_download(app: AppHandle, task_id: String) -> Result<()
             speed: "0B/s".to_string(),
             eta: "00:00".to_string(),
             status: "Cancelled".to_string(),
+            file_path: None,
         });
         Ok(())
     } else {

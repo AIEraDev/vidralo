@@ -34,6 +34,7 @@ export interface DownloadItem {
   status: string;
   addedAt: string;
   format: string;
+  filePath?: string;
 }
 
 export interface Settings {
@@ -49,6 +50,7 @@ interface DownloadProgressPayload {
   speed: string;
   eta: string;
   status: string;
+  file_path?: string | null;
 }
 
 interface UpdateProgressPayload {
@@ -114,6 +116,7 @@ export const useStore = create<StoreState>((set, get) => {
             speed: payload.speed,
             eta: payload.eta,
             status: payload.status,
+            ...(payload.file_path ? { filePath: payload.file_path } : {}),
           };
         }
         return d;
