@@ -3,16 +3,16 @@ name: Vidralo — Production Build
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.0.0)'
+        description: "Version tag (e.g. v1.0.0)"
         required: false
-        default: ''
+        default: ""
 
 permissions:
-  contents: write  # Needed to create GitHub Releases
+  contents: write # Needed to create GitHub Releases
 
 jobs:
   build-and-release:
@@ -28,7 +28,7 @@ jobs:
             bgutil_asset: bgutil-pot-macos-aarch64
 
           - name: macOS x86_64
-            os: macos-13   # last Intel runner
+            os: macos-13 # last Intel runner
             target: x86_64-apple-darwin
             ytdlp_asset: yt-dlp_macos
             bgutil_asset: bgutil-pot-macos-x86_64
@@ -69,8 +69,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
       # ── 4. Rust ────────────────────────────────────────────────────────────
       - name: Setup Rust stable
@@ -81,7 +81,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
 
       # ── 5. Install NPM dependencies ─────────────────────────────────────────
       - name: Install npm dependencies
@@ -142,7 +142,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Vidralo ${{ github.ref_name }}'
+          releaseName: "Vidralo ${{ github.ref_name }}"
           releaseBody: |
             ## What's Changed
             See the full changelog at https://github.com/${{ github.repository }}/compare/${{ github.ref_name }}
@@ -156,4 +156,5 @@ jobs:
             > **Note**: No Python or external dependencies required. All download tools are self-contained.
           releaseDraft: true
           prerelease: false
+          tauriScript: npm run tauri -- build
           args: --target ${{ matrix.platform.target }}
