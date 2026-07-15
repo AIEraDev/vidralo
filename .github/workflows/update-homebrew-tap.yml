@@ -1,0 +1,88 @@
+name: Update Homebrew Tap
+
+on:
+  release:
+    types: [published]   # triggers only when you publish the draft release
+
+jobs:
+  update-tap:
+    name: Update Cask SHA256 & version
+    runs-on: macos-latest
+
+    steps:
+      # ── 1. Wait for DMG assets to be fully uploaded ─────────────────────
+      - name: Wait for release assets
+        run: sleep 30
+
+      # ── 2. Derive version from tag (strips leading 'v') ──────────────────
+      - name: Set version
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
+      # ── 3. Download DMG files and compute SHA256 ─────────────────────────
+      - name: Compute SHA256 for ARM64 DMG
+        id: sha_arm
+        run: |
+          URL="https://github.com/AIEraDev/vidralo/releases/download/${{ steps.version.outputs.tag }}/Vidralo_${{ steps.version.outputs.version }}_aarch64.dmg"
+          curl -sL "$URL" -o /tmp/vidralo_arm.dmg
+          SHA=$(shasum -a 256 /tmp/vidralo_arm.dmg | awk '{print $1}')
+          echo "sha256=${SHA}" >> $GITHUB_OUTPUT
+
+      - name: Compute SHA256 for x86_64 DMG
+        id: sha_intel
+        run: |
+          URL="https://github.com/AIEraDev/vidralo/releases/download/${{ steps.version.outputs.tag }}/Vidralo_${{ steps.version.outputs.version }}_x64.dmg"
+          curl -sL "$URL" -o /tmp/vidralo_intel.dmg
+          SHA=$(shasum -a 256 /tmp/vidralo_intel.dmg | awk '{print $1}')
+          echo "sha256=${SHA}" >> $GITHUB_OUTPUT
+
+      # ── 4. Checkout the tap repo ─────────────────────────────────────────
+      - name: Checkout homebrew-vidralo tap
+        uses: actions/checkout@v4
+        with:
+          repository: AIEraDev/homebrew-vidralo
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}   # PAT with repo write access
+          path: homebrew-vidralo
+
+      # ── 5. Patch the Cask file ───────────────────────────────────────────
+      - name: Update Cask version and SHA256s
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          SHA_ARM="${{ steps.sha_arm.outputs.sha256 }}"
+          SHA_INTEL="${{ steps.sha_intel.outputs.sha256 }}"
+          CASK="homebrew-vidralo/Casks/vidralo.rb"
+
+          # Update version
+          sed -i '' "s/version \".*\"/version \"${VERSION}\"/" "$CASK"
+
+          # Update ARM64 sha256
+          awk -v sha="$SHA_ARM" '
+            /on_arm/,/end/ {
+              if (/sha256/) { sub(/sha256.*/, "sha256 \"" sha "\"") }
+            }
+            { print }
+          ' "$CASK" > /tmp/cask_arm.rb && mv /tmp/cask_arm.rb "$CASK"
+
+          # Update Intel sha256
+          awk -v sha="$SHA_INTEL" '
+            /on_intel/,/end/ {
+              if (/sha256/) { sub(/sha256.*/, "sha256 \"" sha "\"") }
+            }
+            { print }
+          ' "$CASK" > /tmp/cask_intel.rb && mv /tmp/cask_intel.rb "$CASK"
+
+          echo "Updated Cask:"
+          cat "$CASK"
+
+      # ── 6. Commit and push back to tap ───────────────────────────────────
+      - name: Commit and push Cask update
+        run: |
+          cd homebrew-vidralo
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/vidralo.rb
+          git commit -m "chore: update Vidralo to ${{ steps.version.outputs.tag }}"
+          git push
