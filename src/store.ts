@@ -121,6 +121,7 @@ export const useStore = create<StoreState>((set, get) => {
         }
         return d;
       });
+      localStorage.setItem("vidralo_downloads", JSON.stringify(updatedDownloads));
       return { downloads: updatedDownloads };
     });
   });
@@ -203,10 +204,12 @@ export const useStore = create<StoreState>((set, get) => {
         format: formatId,
       };
 
-      set((state) => ({
-        downloads: [newDownload, ...state.downloads],
-        metadataPreview: null, // Clear preview after starting download
-      }));
+      const updatedDownloads = [newDownload, ...get().downloads];
+      localStorage.setItem("vidralo_downloads", JSON.stringify(updatedDownloads));
+      set({
+        downloads: updatedDownloads,
+        metadataPreview: null,
+      });
 
       try {
         await invoke("start_download", {
@@ -218,13 +221,15 @@ export const useStore = create<StoreState>((set, get) => {
           filenameTemplate: null,
         });
       } catch (err: any) {
-        set((state) => ({
-          downloads: state.downloads.map((d) =>
+        set((state) => {
+          const updatedDownloads = state.downloads.map((d) =>
             d.taskId === taskId
               ? { ...d, status: `Error: ${err.toString()}`, percentage: 0 }
               : d
-          ),
-        }));
+          );
+          localStorage.setItem("vidralo_downloads", JSON.stringify(updatedDownloads));
+          return { downloads: updatedDownloads };
+        });
       }
     },
 
@@ -237,11 +242,13 @@ export const useStore = create<StoreState>((set, get) => {
     },
 
     clearHistory: () => {
-      set((state) => ({
-        downloads: state.downloads.filter(
-          (d) => d.status !== "Completed" && d.status !== "Cancelled" && !d.status.startsWith("Error:")
-        ),
-      }));
+      set((state) => {
+        const updatedDownloads = state.downloads.filter(
+          (d) => d.status !== "Completed" && d.status !== "Cancelled" && !d.status.startsWith("Error:") && d.status !== "Interrupted"
+        );
+        localStorage.setItem("vidralo_downloads", JSON.stringify(updatedDownloads));
+        return { downloads: updatedDownloads };
+      });
     },
 
     loadSettings: async () => {
@@ -253,6 +260,29 @@ export const useStore = create<StoreState>((set, get) => {
           set((state) => ({ settings: { ...state.settings, ...parsed } }));
         } catch (e) {
           console.error("Failed to parse settings", e);
+        }
+      }
+
+      // Load downloads from localStorage
+      const savedDownloads = localStorage.getItem("vidralo_downloads");
+      if (savedDownloads) {
+        try {
+          const parsed = JSON.parse(savedDownloads) as DownloadItem[];
+          const sanitized = parsed.map((d) => {
+            const isActive = d.status !== "Completed" && d.status !== "Cancelled" && !d.status.startsWith("Error:") && d.status !== "Interrupted";
+            if (isActive) {
+              return {
+                ...d,
+                status: "Interrupted",
+                speed: "0B/s",
+                eta: "--:--",
+              };
+            }
+            return d;
+          });
+          set({ downloads: sanitized });
+        } catch (e) {
+          console.error("Failed to parse downloads", e);
         }
       }
 
