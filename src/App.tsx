@@ -448,14 +448,14 @@ export default function App() {
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Default Downloads folder"
+                    placeholder="~/Vidralo/Downloads"
                     value={settings.outputDir}
                     onChange={(e) => saveSettings({ outputDir: e.target.value })}
                     className="flex-1 h-10 px-3 rounded-xl bg-white/5 border border-white/5 text-xs text-gray-300 outline-none"
                   />
                 </div>
                 <p className="text-[10px] text-gray-500 leading-relaxed">
-                  Leave empty to download to your default system Downloads folder.
+                  Leave empty to download to ~/Vidralo/Downloads.
                 </p>
               </div>
 

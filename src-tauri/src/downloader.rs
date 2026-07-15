@@ -267,12 +267,21 @@ pub async fn start_video_download(
     cookies_browser: Option<String>,
     filename_template: Option<String>,
 ) -> Result<(), String> {
-    // Resolve output directory path
+    // Resolve output directory path dynamically (defaults to ~/Vidralo/Downloads)
     let resolved_out_dir = if output_dir.is_empty() {
-        app.path().download_dir().map_err(|e| e.to_string())?
+        if let Ok(home) = app.path().home_dir() {
+            home.join("Vidralo").join("Downloads")
+        } else {
+            app.path().download_dir().map_err(|e| e.to_string())?
+        }
     } else {
         PathBuf::from(output_dir)
     };
+    
+    // Ensure the folder exists
+    if !resolved_out_dir.exists() {
+        let _ = std::fs::create_dir_all(&resolved_out_dir);
+    }
     
     let template = filename_template.unwrap_or_else(|| "%(title)s [%(id)s].%(ext)s".to_string());
     let output_path = resolved_out_dir.join(&template);
