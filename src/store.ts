@@ -296,6 +296,19 @@ export const useStore = create<StoreState>((set, get) => {
 
       // Check FFmpeg
       await get().checkFFmpeg();
+
+      // Auto check and update dependency binaries on startup (runs in background)
+      setTimeout(async () => {
+        try {
+          await get().checkUpdates();
+          if (get().updateStatus.updateAvailable) {
+            console.log("Auto-updating dependency binaries on launch...");
+            await get().performUpdates();
+          }
+        } catch (err) {
+          console.error("Failed to auto-update dependency binaries", err);
+        }
+      }, 500);
     },
 
     saveSettings: (newSettings: Partial<Settings>) => {

@@ -32,7 +32,7 @@
   "plugins": {
     "updater": {
       "active": true,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ4NTdGMEJDMDIwNDk2MDMKUVRRRG xnUUN2UEJYU0hTUkVub1dKRHRZUzAvS1lPTklrd3M2OEMvQll3VUhWeUd2TUllU0lOSXQK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ4NTdGMEJDMDIwNDk2MDMKUVRRRGxnUUN2UEJYU0hTUkVub1dKRHRZUzAvS1lPTklrd3M2OEMvQll3VUhWeUd2TUllU0lOSXQK",
       "endpoints": ["https://github.com/AIEraDev/vidralo/releases/latest/download/latest.json"],
       "windows": {
         "installMode": "passive"
