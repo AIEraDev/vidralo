@@ -8,8 +8,10 @@ OS=$(uname -s)
 if [ "$OS" = "Darwin" ]; then
     if [ "$ARCH" = "arm64" ]; then
         TRIPLE="aarch64-apple-darwin"
+        FFMPEG_ASSET="darwin-arm64"
     else
         TRIPLE="x86_64-apple-darwin"
+        FFMPEG_ASSET="darwin-x64"
     fi
     YTDLP_ASSET="yt-dlp_macos"
     BGUTIL_ASSET="bgutil-pot-macos-aarch64"
@@ -20,6 +22,7 @@ elif [ "$OS" = "Linux" ]; then
     TRIPLE="x86_64-unknown-linux-gnu"
     YTDLP_ASSET="yt-dlp_linux"
     BGUTIL_ASSET="bgutil-pot-linux-x86_64"
+    FFMPEG_ASSET="linux-x64"
 else
     echo "Unsupported OS: $OS"
     exit 1
@@ -39,5 +42,10 @@ chmod +x "src-tauri/binaries/yt-dlp-$TRIPLE"
 echo "Downloading bgutil-pot..."
 curl -L -o "src-tauri/binaries/bgutil-pot-$TRIPLE" "https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/$BGUTIL_ASSET"
 chmod +x "src-tauri/binaries/bgutil-pot-$TRIPLE"
+
+# Download ffmpeg
+echo "Downloading ffmpeg..."
+curl -L -o "src-tauri/binaries/ffmpeg-$TRIPLE" "https://github.com/eugeneware/ffmpeg-static/releases/download/b5.0.1/$FFMPEG_ASSET"
+chmod +x "src-tauri/binaries/ffmpeg-$TRIPLE"
 
 echo "Setup completed successfully!"

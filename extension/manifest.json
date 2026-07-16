@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Send to Vidralo",
+  "version": "1.0",
+  "description": "Sends video URLs directly to the Vidralo desktop application.",
+  "permissions": ["activeTab", "contextMenus"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Send page to Vidralo"
+  }
+}

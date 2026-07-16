@@ -26,13 +26,18 @@
     "targets": "all",
     "publisher": "AIEraDev",
     "createUpdaterArtifacts": true,
-    "externalBin": ["binaries/yt-dlp", "binaries/bgutil-pot"],
+    "externalBin": ["binaries/yt-dlp", "binaries/bgutil-pot", "binaries/ffmpeg"],
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["vidralo"]
+      }
+    },
     "updater": {
       "active": true,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ4NTdGMEJDMDIwNDk2MDMKUVRRRGxnUUN2UEJYU0hTUkVub1dKRHRZUzAvS1lPTklrd3M2OEMvQll3VUhWeUd2TUllU0lOSXQK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIyN0NCRDQ3RjUxMzAxNgpSV1FXTUZGLzFNc25DeFNjSHBQMGZCUTlkZXpSVkVnVUJ0RjFpT21LZTZyVjJXMXU4eXIxL1lERko=",
       "endpoints": ["https://github.com/AIEraDev/vidralo/releases/latest/download/latest.json"],
       "windows": {
         "installMode": "passive"

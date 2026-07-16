@@ -158,6 +158,25 @@ pub fn get_bgutil_path(app: &AppHandle) -> Result<PathBuf, String> {
     }
 }
 
+pub fn get_ffmpeg_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let updated_path = app_dir.join("binaries").join(format!("ffmpeg{}", get_binary_extension()));
+    
+    if updated_path.exists() && updated_path.is_file() {
+        return Ok(updated_path);
+    }
+    
+    let sidecar_filename = format!("binaries/ffmpeg-{}{}", get_target_triple(), get_binary_extension());
+    let bundled_path = app.path().resolve(&sidecar_filename, BaseDirectory::Resource)
+        .map_err(|e| e.to_string())?;
+        
+    if bundled_path.exists() && bundled_path.is_file() {
+        Ok(bundled_path)
+    } else {
+        Err(format!("ffmpeg sidecar not found at {:?}", bundled_path))
+    }
+}
+
 pub fn get_versions_file_path(app: &AppHandle) -> Result<PathBuf, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     Ok(app_dir.join("versions.json"))

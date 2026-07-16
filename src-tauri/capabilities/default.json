@@ -6,6 +6,8 @@
   "permissions": [
     "core:default",
     "opener:default",
+    "deep-link:default",
+    "deep-link:allow-get-current",
     "updater:default",
     "process:default",
     "process:allow-restart",
@@ -19,6 +21,10 @@
         {
           "name": "binaries/bgutil-pot",
           "sidecar": true
+        },
+        {
+          "name": "binaries/ffmpeg",
+          "sidecar": true
         }
       ]
     },
@@ -31,6 +37,10 @@
         },
         {
           "name": "binaries/bgutil-pot",
+          "sidecar": true
+        },
+        {
+          "name": "binaries/ffmpeg",
           "sidecar": true
         }
       ]
