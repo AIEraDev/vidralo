@@ -3,12 +3,12 @@ cask "vidralo" do
 
   on_arm do
     url "https://github.com/AIEraDev/vidralo/releases/download/v#{version}/Vidralo_#{version}_aarch64.dmg"
-    sha256 "8716a162d17ca4c1d07116b8c2c18b0ec8f01ee98bafc3a56d7bd4b2f49e2ec9"
+    sha256 "8716a162d17ca4c1d07116b8ef31744403f8d0bd9f38e0f974d9193c91364db7"
   end
 
   on_intel do
     url "https://github.com/AIEraDev/vidralo/releases/download/v#{version}/Vidralo_#{version}_x64.dmg"
-    sha256 "3a3d3bba9509974f755b8871e8fb0e6da9ff458a4071bac5fd3e37eaee09e764"
+    sha256 "3a3d3bba9509974f755b88712d92e442f97c4ca29a6c713847ae5ebb7a6ccf8a"
   end
 
   name "Vidralo"
