@@ -41,7 +41,7 @@ jobs:
 
       # ── 4. Checkout the tap repo ─────────────────────────────────────────
       - name: Checkout homebrew-vidralo tap
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: AIEraDev/homebrew-vidralo
           token: ${{ secrets.TAP_GITHUB_TOKEN }}   # PAT with repo write access
