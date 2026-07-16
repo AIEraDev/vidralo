@@ -1,7 +1,8 @@
 {
-  "name": "tauri-app",
+  "name": "vidralo",
   "private": true,
   "version": "0.1.0",
+  "description": "Local-first video downloader — downloads streams directly from your own IP. Supports YouTube, Vimeo, Twitter, and 1000+ sites.",
   "type": "module",
   "scripts": {
     "dev": "vite",

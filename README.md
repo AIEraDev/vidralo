@@ -1,12 +1,13 @@
 # Vidralo
 
-**Local-first YouTube downloader** — downloads stream directly from your own IP.
+**Local-first video downloader** — downloads streams directly from your own IP.
 
-Vidralo is a desktop application that allows you to download YouTube videos and audio directly to your computer without relying on third-party services or proxies.
+Vidralo is a desktop application that allows you to download videos and audio from YouTube, Vimeo, Twitter, and 1000+ supported sites directly to your computer without relying on third-party services or proxies.
 
 ## Features
 
-- 🚀 **Local-first**: Downloads stream directly from your IP
+- 🚀 **Local-first**: Downloads streams directly from your IP
+- 🌐 **Multi-platform**: Supports YouTube, Vimeo, Twitter, and 1000+ sites
 - 🎯 **Simple UI**: Clean and intuitive interface
 - 🎵 **Multiple formats**: Support for video and audio downloads
 - 🔒 **Privacy-focused**: No data sent to external services
